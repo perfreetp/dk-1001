@@ -29,6 +29,7 @@ export interface TagOptions {
   add?: string[];
   remove?: string[];
   listMissingCovers?: boolean;
+  preview?: boolean;
 }
 
 export interface DedupeOptions {
@@ -40,7 +41,7 @@ export interface DedupeOptions {
 export interface ExportOptions {
   directory: string;
   output: string;
-  format?: 'json' | 'yaml' | 'csv';
+  format?: 'json' | 'yaml' | 'csv' | 'md';
 }
 
 export interface OperationRecord {

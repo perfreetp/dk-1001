@@ -25,13 +25,18 @@ program
   .option('-l, --language <lang>', '按语言过滤 (zh, en)')
   .option('-r, --recursive', '递归扫描子目录', true)
   .action(async (directory, options) => {
-    const ebooks = await scan({
-      directory,
-      format: options.format,
-      language: options.language,
-      recursive: options.recursive
-    });
-    printScanResults(ebooks);
+    try {
+      const ebooks = await scan({
+        directory,
+        format: options.format,
+        language: options.language,
+        recursive: options.recursive
+      });
+      printScanResults(ebooks);
+    } catch (error) {
+      console.error(chalk.red(`扫描失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -42,12 +47,17 @@ program
   .option('-m, --move', '移动到分类文件夹')
   .option('--preview', '预览模式，不执行实际操作')
   .action(async (directory, options) => {
-    await rename({
-      directory,
-      pattern: options.pattern,
-      move: options.move,
-      preview: options.preview
-    });
+    try {
+      await rename({
+        directory,
+        pattern: options.pattern,
+        move: options.move,
+        preview: options.preview
+      });
+    } catch (error) {
+      console.error(chalk.red(`重命名失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -57,13 +67,20 @@ program
   .option('-a, --add <tags...>', '添加标签')
   .option('-r, --remove <tags...>', '删除标签')
   .option('--list-missing-covers', '列出缺少封面的书籍')
+  .option('--preview', '预览模式，不执行实际操作')
   .action(async (directory, options) => {
-    await tag({
-      directory,
-      add: options.add || [],
-      remove: options.remove || [],
-      listMissingCovers: options.listMissingCovers
-    });
+    try {
+      await tag({
+        directory,
+        add: options.add || [],
+        remove: options.remove || [],
+        listMissingCovers: options.listMissingCovers,
+        preview: options.preview
+      });
+    } catch (error) {
+      console.error(chalk.red(`标签操作失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -73,11 +90,16 @@ program
   .option('-t, --threshold <number>', '相似度阈值', (value: string) => parseFloat(value), 0.9)
   .option('--preview', '预览模式，不执行实际操作')
   .action(async (directory, options) => {
-    await dedupe({
-      directory,
-      threshold: options.threshold,
-      preview: options.preview
-    });
+    try {
+      await dedupe({
+        directory,
+        threshold: options.threshold,
+        preview: options.preview
+      });
+    } catch (error) {
+      console.error(chalk.red(`去重失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -85,13 +107,18 @@ program
   .description('导出书单清单')
   .argument('<directory>', '要导出的目录路径')
   .argument('<output>', '输出文件路径')
-  .option('-f, --format <format>', '输出格式 (json, yaml, csv)', 'json')
+  .option('-f, --format <format>', '输出格式 (json, yaml, csv, md)', 'json')
   .action(async (directory, output, options) => {
-    await exportList({
-      directory,
-      output,
-      format: options.format as 'json' | 'yaml' | 'csv'
-    });
+    try {
+      await exportList({
+        directory,
+        output,
+        format: options.format as 'json' | 'yaml' | 'csv' | 'md'
+      });
+    } catch (error) {
+      console.error(chalk.red(`导出失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -99,7 +126,12 @@ program
   .description('撤销最近一次批量操作')
   .argument('<directory>', '操作所在的目录路径')
   .action(async (directory) => {
-    await undo(directory);
+    try {
+      await undo(directory);
+    } catch (error) {
+      console.error(chalk.red(`撤销失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program
@@ -107,11 +139,16 @@ program
   .description('生成整理报告')
   .argument('<directory>', '要生成报告的目录路径')
   .action(async (directory) => {
-    await generateReport(directory);
+    try {
+      await generateReport(directory);
+    } catch (error) {
+      console.error(chalk.red(`生成报告失败: ${error}`));
+      process.exit(1);
+    }
   });
 
 program.parse();
 
 if (!process.argv.slice(2).length) {
-  program.outputHelp();
+  program.outputHelp(chalk.cyan);
 }

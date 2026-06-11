@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import { DedupeOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
-import { deleteFile, formatFileSize } from '../utils/fileUtils';
-import { createOperationRecord, addOperation, saveState } from '../utils/stateManager';
+import { formatFileSize } from '../utils/fileUtils';
+import { createOperationRecord, addOperation, saveState, moveToTrash } from '../utils/stateManager';
 
 export interface DuplicateGroup {
   title: string;
@@ -22,7 +22,7 @@ export async function dedupe(options: DedupeOptions): Promise<void> {
   const duplicates = await findDuplicates(ebooks, threshold);
 
   console.log(chalk.bold('\n重复书籍检测结果:'));
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
 
   const changes: ChangeRecord[] = [];
   let totalDuplicates = 0;
@@ -46,8 +46,10 @@ export async function dedupe(options: DedupeOptions): Promise<void> {
           changes.push({
             type: 'delete',
             source: book.filePath,
+            target: '',
             metadata: {
-              keepPath: group.books[0].filePath
+              keepPath: group.books[0].filePath,
+              trashPath: ''
             }
           });
           totalDuplicates++;
@@ -56,19 +58,23 @@ export async function dedupe(options: DedupeOptions): Promise<void> {
     }
   });
 
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
   console.log(chalk.cyan(`共发现 ${duplicates.length} 组重复，${totalDuplicates} 个重复文件`));
 
   if (!preview && changes.length > 0) {
-    const operation = createOperationRecord('dedupe', changes);
-    addOperation(operation);
-    
     for (const change of changes) {
-      await deleteFile(change.source);
+      const trashPath = await moveToTrash(change.source, directory);
+      change.target = trashPath;
+      change.metadata = change.metadata || {};
+      change.metadata.trashPath = trashPath;
     }
     
+    const operation = createOperationRecord('dedupe', changes);
+    addOperation(operation);
     await saveState(directory);
+    
     console.log(chalk.green('\n操作已完成!'));
+    console.log(chalk.blue(`重复文件已移至恢复区域: .ebook-organizer-trash/`));
   } else if (preview) {
     console.log(chalk.yellow('\n预览模式 - 未执行实际操作'));
   }

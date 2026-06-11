@@ -6,7 +6,7 @@ import { scan } from './scan';
 import { createOperationRecord, addOperation, saveState } from '../utils/stateManager';
 
 export async function tag(options: TagOptions): Promise<void> {
-  const { directory, add = [], remove = [], listMissingCovers = false } = options;
+  const { directory, add = [], remove = [], listMissingCovers = false, preview = false } = options;
   
   if (listMissingCovers) {
     await listBooksWithoutCovers(directory);
@@ -22,7 +22,9 @@ export async function tag(options: TagOptions): Promise<void> {
   const changes: ChangeRecord[] = [];
 
   console.log(chalk.bold('\n标签操作预览:'));
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
+
+  let hasChanges = false;
 
   for (const ebook of ebooks) {
     const tagFilePath = ebook.filePath + '.tags';
@@ -34,10 +36,13 @@ export async function tag(options: TagOptions): Promise<void> {
     }
 
     const newTags = [...currentTags];
+    const addedTags: string[] = [];
+    const removedTags: string[] = [];
     
     for (const tag of add) {
       if (!newTags.includes(tag)) {
         newTags.push(tag);
+        addedTags.push(tag);
       }
     }
 
@@ -45,29 +50,40 @@ export async function tag(options: TagOptions): Promise<void> {
       const index = newTags.indexOf(tag);
       if (index !== -1) {
         newTags.splice(index, 1);
+        removedTags.push(tag);
       }
     }
 
-    if (newTags.join(',') !== currentTags.join(',')) {
+    if (addedTags.length > 0 || removedTags.length > 0) {
+      hasChanges = true;
       changes.push({
         type: 'tag',
         source: ebook.filePath,
+        target: tagFilePath,
         metadata: {
-          oldTags: currentTags,
-          newTags
+          oldTags: [...currentTags],
+          newTags: [...newTags],
+          addedTags,
+          removedTags
         }
       });
 
       console.log(chalk.cyan(ebook.title));
       console.log(chalk.gray(`  当前标签: [${currentTags.join(', ') || '无'}]`));
       console.log(chalk.green(`  新标签: [${newTags.join(', ') || '无'}]`));
+      if (addedTags.length > 0) {
+        console.log(chalk.blue(`  添加: +${addedTags.join(', +')}`));
+      }
+      if (removedTags.length > 0) {
+        console.log(chalk.red(`  删除: -${removedTags.join(', -')}`));
+      }
     }
   }
 
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
   console.log(chalk.cyan(`将修改 ${changes.length} 个文件的标签`));
 
-  if (changes.length > 0) {
+  if (!preview && hasChanges && changes.length > 0) {
     const operation = createOperationRecord('tag', changes);
     addOperation(operation);
     
@@ -83,6 +99,8 @@ export async function tag(options: TagOptions): Promise<void> {
     
     await saveState(directory);
     console.log(chalk.green('\n操作已完成!'));
+  } else if (preview) {
+    console.log(chalk.yellow('\n预览模式 - 未执行实际操作'));
   }
 }
 
@@ -90,20 +108,18 @@ async function listBooksWithoutCovers(directory: string): Promise<void> {
   const ebooks = await scan({ directory, recursive: true });
   
   console.log(chalk.bold('\n缺少封面的书籍:'));
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
 
   let count = 0;
   for (const ebook of ebooks) {
-    const coverPath = path.join(path.dirname(ebook.filePath), 'cover.jpg');
-    const coverPathPng = path.join(path.dirname(ebook.filePath), 'cover.png');
-    
-    if (!await fs.pathExists(coverPath) && !await fs.pathExists(coverPathPng)) {
+    if (!ebook.hasCover) {
       console.log(chalk.yellow(`${ebook.title}`));
+      console.log(chalk.gray(`  作者: ${ebook.author || '未知'}`));
       console.log(chalk.gray(`  路径: ${ebook.filePath}`));
       count++;
     }
   }
 
-  console.log(chalk.gray('='.repeat(80)));
+  console.log(chalk.gray('='.repeat(100)));
   console.log(chalk.green(`共找到 ${count} 本缺少封面的书籍`));
 }
