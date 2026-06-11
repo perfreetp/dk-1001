@@ -1,15 +1,14 @@
-import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { TagOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
 import { createOperationRecord, addOperation, saveState } from '../utils/stateManager';
 
-export async function tag(options: TagOptions): Promise<void> {
+export async function tag(options: TagOptions, chalk: any): Promise<void> {
   const { directory, add = [], remove = [], listMissingCovers = false, preview = false } = options;
   
   if (listMissingCovers) {
-    await listBooksWithoutCovers(directory);
+    await listBooksWithoutCovers(directory, chalk);
     return;
   }
 
@@ -104,7 +103,7 @@ export async function tag(options: TagOptions): Promise<void> {
   }
 }
 
-async function listBooksWithoutCovers(directory: string): Promise<void> {
+async function listBooksWithoutCovers(directory: string, chalk: any): Promise<void> {
   const ebooks = await scan({ directory, recursive: true });
   
   console.log(chalk.bold('\n缺少封面的书籍:'));

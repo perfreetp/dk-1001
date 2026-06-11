@@ -1,6 +1,8 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
+const IGNORED_DIRECTORIES = ['.ebook-organizer-trash', '.git', 'node_modules'];
+
 export async function scanDirectory(directory: string, recursive: boolean = true): Promise<string[]> {
   const files: string[] = [];
   const entries = await fs.readdir(directory, { withFileTypes: true });
@@ -9,6 +11,9 @@ export async function scanDirectory(directory: string, recursive: boolean = true
     const fullPath = path.join(directory, entry.name);
     
     if (entry.isDirectory()) {
+      if (IGNORED_DIRECTORIES.includes(entry.name)) {
+        continue;
+      }
       if (recursive) {
         const subFiles = await scanDirectory(fullPath, recursive);
         files.push(...subFiles);
@@ -45,15 +50,32 @@ export async function fileExists(filePath: string): Promise<boolean> {
 
 export async function renameFile(oldPath: string, newPath: string): Promise<void> {
   await fs.move(oldPath, newPath, { overwrite: true });
+  
+  const tagFileOld = oldPath + '.tags';
+  const tagFileNew = newPath + '.tags';
+  if (await fs.pathExists(tagFileOld)) {
+    await fs.move(tagFileOld, tagFileNew, { overwrite: true });
+  }
 }
 
 export async function moveFile(source: string, destination: string): Promise<void> {
   await fs.ensureDir(path.dirname(destination));
   await fs.move(source, destination, { overwrite: true });
+  
+  const tagFileSource = source + '.tags';
+  const tagFileDest = destination + '.tags';
+  if (await fs.pathExists(tagFileSource)) {
+    await fs.move(tagFileSource, tagFileDest, { overwrite: true });
+  }
 }
 
 export async function deleteFile(filePath: string): Promise<void> {
   await fs.remove(filePath);
+  
+  const tagFile = filePath + '.tags';
+  if (await fs.pathExists(tagFile)) {
+    await fs.remove(tagFile);
+  }
 }
 
 export function formatFileSize(bytes: number): string {

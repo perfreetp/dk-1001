@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { EbookInfo, ScanOptions } from '../types';
@@ -87,7 +86,7 @@ async function checkCover(filePath: string): Promise<boolean> {
   return false;
 }
 
-export function printScanResults(ebooks: EbookInfo[]): void {
+export function printScanResults(ebooks: EbookInfo[], chalk: any): void {
   console.log(chalk.bold('\n扫描结果:'));
   console.log(chalk.gray('='.repeat(100)));
   
@@ -99,8 +98,8 @@ export function printScanResults(ebooks: EbookInfo[]): void {
 
   ebooks.forEach((ebook, index) => {
     const lang = ebook.tags.includes('zh') ? '中文' : ebook.tags.includes('en') ? '英文' : '其他';
-    const category = ebook.tags.find(t => !['zh', 'en', 'other'].includes(t)) || '其他';
-    const customTags = ebook.tags.filter(t => !['zh', 'en', 'other', category].includes(t));
+    const category = ebook.tags.find((t: string) => !['zh', 'en', 'other'].includes(t)) || '其他';
+    const customTags = ebook.tags.filter((t: string) => !['zh', 'en', 'other', category].includes(t));
     
     console.log(
       `${(index + 1).toString().padEnd(6)} | ` +

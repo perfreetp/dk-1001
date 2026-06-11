@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { scan } from './scan';
 import { formatFileSize } from '../utils/fileUtils';
 
@@ -10,7 +9,7 @@ interface Stats {
   categories: Record<string, number>;
 }
 
-export async function generateReport(directory: string): Promise<void> {
+export async function generateReport(directory: string, chalk: any): Promise<void> {
   const ebooks = await scan({ directory, recursive: true });
   
   const stats: Stats = {
@@ -28,7 +27,7 @@ export async function generateReport(directory: string): Promise<void> {
     const lang = ebook.tags.includes('zh') ? '中文' : ebook.tags.includes('en') ? '英文' : '其他';
     stats.languages[lang] = (stats.languages[lang] || 0) + 1;
     
-    const category = ebook.tags.find(t => !['zh', 'en', 'other'].includes(t)) || '其他';
+    const category = ebook.tags.find((t: string) => !['zh', 'en', 'other'].includes(t)) || '其他';
     stats.categories[category] = (stats.categories[category] || 0) + 1;
   });
 

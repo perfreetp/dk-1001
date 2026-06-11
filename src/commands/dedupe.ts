@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { DedupeOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
 import { formatFileSize } from '../utils/fileUtils';
@@ -15,7 +14,7 @@ export interface DuplicateGroup {
   }[];
 }
 
-export async function dedupe(options: DedupeOptions): Promise<void> {
+export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> {
   const { directory, threshold = 0.9, preview = false } = options;
   
   const ebooks = await scan({ directory, recursive: true });
@@ -60,6 +59,7 @@ export async function dedupe(options: DedupeOptions): Promise<void> {
 
   console.log(chalk.gray('='.repeat(100)));
   console.log(chalk.cyan(`共发现 ${duplicates.length} 组重复，${totalDuplicates} 个重复文件`));
+  console.log(chalk.blue(`相似度阈值: ${(threshold * 100).toFixed(0)}%`));
 
   if (!preview && changes.length > 0) {
     for (const change of changes) {
@@ -80,26 +80,81 @@ export async function dedupe(options: DedupeOptions): Promise<void> {
   }
 }
 
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  
+  if (s1 === s2) return 1.0;
+  
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+  
+  const longerLength = longer.length;
+  
+  if (longerLength === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(s1, s2);
+  return (longerLength - editDistance) / longerLength;
+}
+
+function levenshteinDistance(s1: string, s2: string): number {
+  const costs: number[] = [];
+  
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else if (j > 0) {
+        let newValue = costs[j - 1];
+        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+        }
+        costs[j - 1] = lastValue;
+        lastValue = newValue;
+      }
+    }
+    if (i > 0) {
+      costs[s2.length] = lastValue;
+    }
+  }
+  
+  return costs[s2.length];
+}
+
 async function findDuplicates(ebooks: any[], threshold: number): Promise<DuplicateGroup[]> {
   const groups: Record<string, DuplicateGroup> = {};
 
   for (const ebook of ebooks) {
-    const key = ebook.title.toLowerCase().trim();
+    let matched = false;
     
-    if (!groups[key]) {
+    for (const existingTitle of Object.keys(groups)) {
+      const similarity = calculateSimilarity(ebook.title, existingTitle);
+      if (similarity >= threshold) {
+        groups[existingTitle].books.push({
+          filePath: ebook.filePath,
+          fileName: ebook.fileName,
+          size: ebook.size,
+          extension: ebook.extension
+        });
+        matched = true;
+        break;
+      }
+    }
+    
+    if (!matched) {
+      const key = ebook.title.toLowerCase().trim();
       groups[key] = {
         title: ebook.title,
         author: ebook.author,
-        books: []
+        books: [{
+          filePath: ebook.filePath,
+          fileName: ebook.fileName,
+          size: ebook.size,
+          extension: ebook.extension
+        }]
       };
     }
-    
-    groups[key].books.push({
-      filePath: ebook.filePath,
-      fileName: ebook.fileName,
-      size: ebook.size,
-      extension: ebook.extension
-    });
   }
 
   return Object.values(groups).filter(g => g.books.length > 1);

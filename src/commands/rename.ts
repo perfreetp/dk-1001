@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import * as path from 'path';
 import { EbookInfo, RenameOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
@@ -6,7 +5,7 @@ import { renameFile, moveFile, sanitizeFileName } from '../utils/fileUtils';
 import { getBookCategory } from '../utils/ebookParser';
 import { createOperationRecord, addOperation, saveState } from '../utils/stateManager';
 
-export async function rename(options: RenameOptions): Promise<void> {
+export async function rename(options: RenameOptions, chalk: any): Promise<void> {
   const { directory, pattern = '{author} - {title}', move = false, preview = false } = options;
   
   const ebooks = await scan({ directory, recursive: true });

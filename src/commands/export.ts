@@ -1,11 +1,10 @@
-import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as yaml from 'js-yaml';
 import { ExportOptions } from '../types';
 import { scan } from './scan';
 import { formatFileSize } from '../utils/fileUtils';
 
-export async function exportList(options: ExportOptions): Promise<void> {
+export async function exportList(options: ExportOptions, chalk: any): Promise<void> {
   const { directory, output, format = 'json' } = options;
   
   const ebooks = await scan({ directory, recursive: true });

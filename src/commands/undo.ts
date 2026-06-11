@@ -1,9 +1,8 @@
-import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import { loadState, undoLastOperation, saveState, restoreFromTrash } from '../utils/stateManager';
 import { moveFile } from '../utils/fileUtils';
 
-export async function undo(directory: string): Promise<void> {
+export async function undo(directory: string, chalk: any): Promise<void> {
   await loadState(directory);
   
   const lastOp = undoLastOperation();
