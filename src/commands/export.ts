@@ -24,7 +24,8 @@ export async function exportList(options: ExportOptions, chalk: any): Promise<vo
 
   const exportData = filteredBooks.map(ebook => ({
     title: ebook.title,
-    author: ebook.author,
+    author: ebook.author || '',
+    category: ebook.category,
     format: ebook.extension.slice(1),
     size: ebook.size,
     sizeFormatted: formatFileSize(ebook.size),
@@ -59,10 +60,11 @@ export async function exportList(options: ExportOptions, chalk: any): Promise<vo
 }
 
 function generateCSV(data: any[]): string {
-  const headers = ['书名', '作者', '格式', '大小', '修改时间', '标签', '封面', '路径'];
+  const headers = ['书名', '作者', '分类', '格式', '大小', '修改时间', '标签', '封面', '路径'];
   const rows = data.map(item => [
     `"${item.title}"`,
     `"${item.author}"`,
+    `"${item.category}"`,
     item.format,
     item.sizeFormatted,
     new Date(item.lastModified).toLocaleString(),
@@ -76,7 +78,7 @@ function generateCSV(data: any[]): string {
 
 function generateMarkdown(data: any[], tag?: string, category?: string, author?: string): string {
   const sortedByCategory = data.reduce((acc, item) => {
-    const bookCategory = item.tags.find((t: string) => !['zh', 'en', 'other'].includes(t)) || '其他';
+    const bookCategory = item.category || '其他';
     if (!acc[bookCategory]) {
       acc[bookCategory] = [];
     }

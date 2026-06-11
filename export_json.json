@@ -1,0 +1,58 @@
+[
+  {
+    "title": "三体",
+    "author": "刘慈欣",
+    "category": "其他",
+    "format": "epub",
+    "size": 6,
+    "sizeFormatted": "6 B",
+    "lastModified": "2026-06-11T07:37:53.155Z",
+    "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\三体-刘慈欣.epub",
+    "hasCover": false,
+    "tags": [
+      "zh"
+    ]
+  },
+  {
+    "title": "三体全集",
+    "author": "刘慈欣",
+    "category": "其他",
+    "format": "pdf",
+    "size": 6,
+    "sizeFormatted": "6 B",
+    "lastModified": "2026-06-11T07:37:53.160Z",
+    "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\三体全集-刘慈欣.pdf",
+    "hasCover": false,
+    "tags": [
+      "zh"
+    ]
+  },
+  {
+    "title": "活着",
+    "author": "余华",
+    "category": "其他",
+    "format": "mobi",
+    "size": 6,
+    "sizeFormatted": "6 B",
+    "lastModified": "2026-06-11T07:37:53.165Z",
+    "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\活着-余华.mobi",
+    "hasCover": false,
+    "tags": [
+      "zh"
+    ]
+  },
+  {
+    "title": "深入理解计算机系统",
+    "author": "",
+    "category": "技术",
+    "format": "pdf",
+    "size": 6,
+    "sizeFormatted": "6 B",
+    "lastModified": "2026-06-11T07:37:53.170Z",
+    "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\深入理解计算机系统.pdf",
+    "hasCover": false,
+    "tags": [
+      "zh"
+    ]
+  }
+]

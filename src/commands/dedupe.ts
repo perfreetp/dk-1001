@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { DedupeOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
 import { formatFileSize, fileExists } from '../utils/fileUtils';
@@ -25,6 +26,7 @@ export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> 
   console.log(chalk.gray('='.repeat(100)));
 
   const changes: ChangeRecord[] = [];
+  const skippedFiles: { source: string; target: string }[] = [];
   let totalDuplicates = 0;
 
   duplicates.forEach((group, index) => {
@@ -49,7 +51,8 @@ export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> 
             target: '',
             metadata: {
               keepPath: group.books[0].filePath,
-              trashPath: ''
+              trashPath: '',
+              finalName: ''
             }
           });
           totalDuplicates++;
@@ -63,22 +66,47 @@ export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> 
   console.log(chalk.blue(`相似度阈值: ${(threshold * 100).toFixed(0)}%`));
 
   if (!preview && changes.length > 0) {
+    const trashDir = path.join(directory, '.ebook-organizer-trash');
+    
     for (const change of changes) {
-      const trashPath = await moveToTrash(change.source, directory);
-      change.target = trashPath;
-      change.metadata = change.metadata || {};
-      change.metadata.trashPath = trashPath;
-      await removeFromIndex(directory, change.source);
+      const result = await moveToTrash(change.source, directory, conflict);
+      
+      if (result.success && result.trashPath) {
+        change.target = result.trashPath;
+        change.metadata = change.metadata || {};
+        change.metadata.trashPath = result.trashPath;
+        change.metadata.finalName = path.basename(result.trashPath);
+        await removeFromIndex(directory, change.source);
+      } else if (!result.success) {
+        skippedFiles.push({ source: change.source, target: path.join(trashDir, path.basename(change.source)) });
+      }
     }
     
-    const operation = createOperationRecord('dedupe', changes);
+    const operation = createOperationRecord('dedupe', changes.filter(c => c.target));
     addOperation(operation);
     await saveState(directory);
     
     console.log(chalk.green('\n操作已完成!'));
     console.log(chalk.blue(`重复文件已移至恢复区域: .ebook-organizer-trash/`));
+    
+    if (skippedFiles.length > 0) {
+      console.log(chalk.yellow(`\n跳过的文件（恢复区域已存在）:`));
+      skippedFiles.forEach(f => {
+        console.log(`  ${path.basename(f.source)}`);
+      });
+    }
   } else if (preview) {
     console.log(chalk.yellow('\n预览模式 - 未执行实际操作'));
+    console.log(chalk.blue('\n将移至恢复区域的文件:'));
+    changes.forEach((change, idx) => {
+      const trashFileName = `${Date.now()}-${path.basename(change.source)}`;
+      console.log(`  ${idx + 1}. ${path.basename(change.source)} -> ${trashFileName}`);
+    });
+    if (conflict === 'skip') {
+      console.log(chalk.yellow('\n注意: 若恢复区域存在同名文件，将跳过'));
+    } else if (conflict === 'rename') {
+      console.log(chalk.yellow('\n注意: 若恢复区域存在同名文件，将自动重命名'));
+    }
   }
 }
 

@@ -68,18 +68,35 @@ export function getHistory(): OperationRecord[] {
   return state.history;
 }
 
-export async function moveToTrash(sourcePath: string, directory: string): Promise<string> {
+export async function moveToTrash(sourcePath: string, directory: string, conflict: 'skip' | 'rename' | 'overwrite' = 'rename'): Promise<{ success: boolean; trashPath?: string }> {
   const trashDir = path.join(directory, TRASH_DIR);
   await fs.ensureDir(trashDir);
   
   const fileName = path.basename(sourcePath);
   const timestamp = Date.now();
-  const trashFileName = `${timestamp}-${fileName}`;
-  const trashPath = path.join(trashDir, trashFileName);
+  let trashFileName = `${timestamp}-${fileName}`;
+  let trashPath = path.join(trashDir, trashFileName);
   
-  await fs.move(sourcePath, trashPath, { overwrite: true });
+  const targetExists = await fs.pathExists(trashPath);
   
-  return trashPath;
+  if (targetExists) {
+    if (conflict === 'skip') {
+      return { success: false };
+    } else if (conflict === 'rename') {
+      const ext = path.extname(trashFileName);
+      const base = path.basename(trashFileName, ext);
+      let counter = 1;
+      while (await fs.pathExists(trashPath)) {
+        trashFileName = `${base}_${counter}${ext}`;
+        trashPath = path.join(trashDir, trashFileName);
+        counter++;
+      }
+    }
+  }
+  
+  await fs.move(sourcePath, trashPath, { overwrite: conflict === 'overwrite' });
+  
+  return { success: true, trashPath };
 }
 
 export async function restoreFromTrash(trashPath: string, originalPath: string): Promise<void> {

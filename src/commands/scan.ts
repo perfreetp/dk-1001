@@ -46,7 +46,8 @@ export async function scan(options: ScanOptions, useIndex: boolean = false): Pro
     const tags = await loadTags(filePath);
     const hasCover = await checkCover(filePath);
     
-    const autoTags = [getBookCategory(title), detectedLanguage];
+    const category = getBookCategory(title);
+    const autoTags = [detectedLanguage];
     const allTags = [...new Set([...autoTags, ...tags])];
     
     ebooks.push({
@@ -55,6 +56,7 @@ export async function scan(options: ScanOptions, useIndex: boolean = false): Pro
       extension,
       title,
       author,
+      category,
       size,
       lastModified,
       hasCover,

@@ -4,6 +4,7 @@ export interface EbookInfo {
   extension: string;
   title: string;
   author: string;
+  category: string;
   size: number;
   lastModified: Date;
   hasCover: boolean;

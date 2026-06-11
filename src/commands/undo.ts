@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { loadState, undoLastOperation, saveState, restoreFromTrash } from '../utils/stateManager';
 import { moveFile } from '../utils/fileUtils';
-import { updateIndexPath, addToIndex, removeFromIndex } from '../utils/indexManager';
+import { updateIndexPath, addToIndex, removeFromIndex, updateIndexTags } from '../utils/indexManager';
 import { scan } from './scan';
 
 export async function undo(directory: string, chalk: any): Promise<void> {
@@ -55,6 +55,7 @@ export async function undo(directory: string, chalk: any): Promise<void> {
         } else if (await fs.pathExists(tagFilePath)) {
           await fs.remove(tagFilePath);
         }
+        await updateIndexTags(directory, change.source, oldTags || []);
         console.log(chalk.green('  ✓ 标签已恢复'));
         successCount++;
       } catch (error) {
