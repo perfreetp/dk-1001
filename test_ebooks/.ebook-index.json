@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-06-11T07:29:11.983Z",
+  "books": [
+    {
+      "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\三体-刘慈欣.epub",
+      "fileName": "三体-刘慈欣.epub",
+      "extension": ".epub",
+      "title": "三体",
+      "author": "刘慈欣",
+      "size": 6,
+      "lastModified": "2026-06-11T07:27:24.961Z",
+      "hasCover": false,
+      "tags": [
+        "其他",
+        "zh",
+        "favorite"
+      ]
+    },
+    {
+      "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\三体全集-刘慈欣.pdf",
+      "fileName": "三体全集-刘慈欣.pdf",
+      "extension": ".pdf",
+      "title": "三体全集",
+      "author": "刘慈欣",
+      "size": 6,
+      "lastModified": "2026-06-11T07:27:24.968Z",
+      "hasCover": false,
+      "tags": [
+        "其他",
+        "zh",
+        "favorite"
+      ]
+    },
+    {
+      "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\刘慈欣 - 三体.epub",
+      "fileName": "刘慈欣 - 三体.epub",
+      "extension": ".epub",
+      "title": "刘慈欣",
+      "author": "三体",
+      "size": 7,
+      "lastModified": "2026-06-11T07:29:11.876Z",
+      "hasCover": false,
+      "tags": [
+        "其他",
+        "zh"
+      ]
+    },
+    {
+      "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\活着-余华.mobi",
+      "fileName": "活着-余华.mobi",
+      "extension": ".mobi",
+      "title": "活着",
+      "author": "余华",
+      "size": 6,
+      "lastModified": "2026-06-11T07:27:24.976Z",
+      "hasCover": false,
+      "tags": [
+        "其他",
+        "zh",
+        "favorite"
+      ]
+    },
+    {
+      "filePath": "C:\\TraeProjects\\1001\\test_ebooks\\深入理解计算机系统.pdf",
+      "fileName": "深入理解计算机系统.pdf",
+      "extension": ".pdf",
+      "title": "深入理解计算机系统",
+      "author": "",
+      "size": 6,
+      "lastModified": "2026-06-11T07:27:24.982Z",
+      "hasCover": false,
+      "tags": [
+        "技术",
+        "zh",
+        "favorite"
+      ]
+    }
+  ]
+}

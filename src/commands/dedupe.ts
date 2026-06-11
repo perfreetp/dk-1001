@@ -1,7 +1,8 @@
 import { DedupeOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
-import { formatFileSize } from '../utils/fileUtils';
+import { formatFileSize, fileExists } from '../utils/fileUtils';
 import { createOperationRecord, addOperation, saveState, moveToTrash } from '../utils/stateManager';
+import { removeFromIndex } from '../utils/indexManager';
 
 export interface DuplicateGroup {
   title: string;
@@ -15,7 +16,7 @@ export interface DuplicateGroup {
 }
 
 export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> {
-  const { directory, threshold = 0.9, preview = false } = options;
+  const { directory, threshold = 0.9, preview = false, conflict = 'rename' } = options;
   
   const ebooks = await scan({ directory, recursive: true });
   const duplicates = await findDuplicates(ebooks, threshold);
@@ -67,6 +68,7 @@ export async function dedupe(options: DedupeOptions, chalk: any): Promise<void> 
       change.target = trashPath;
       change.metadata = change.metadata || {};
       change.metadata.trashPath = trashPath;
+      await removeFromIndex(directory, change.source);
     }
     
     const operation = createOperationRecord('dedupe', changes);

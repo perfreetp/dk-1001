@@ -3,12 +3,23 @@ import * as path from 'path';
 import { EbookInfo, ScanOptions } from '../types';
 import { scanDirectory, getFileExtension, getFileSize, getFileModifiedTime, formatFileSize } from '../utils/fileUtils';
 import { parseFileName, detectLanguage, getBookCategory } from '../utils/ebookParser';
+import { saveIndex, loadIndex } from '../utils/indexManager';
 
 const EBOOK_EXTENSIONS = ['.epub', '.mobi', '.pdf', '.azw', '.azw3', '.txt', '.doc', '.docx'];
 
-export async function scan(options: ScanOptions): Promise<EbookInfo[]> {
-  const { directory, format, language, recursive = true } = options;
+export async function scan(options: ScanOptions, useIndex: boolean = false): Promise<EbookInfo[]> {
+  const { directory, format, language, recursive = true, updateIndex = true } = options;
   
+  if (useIndex) {
+    const index = await loadIndex(directory);
+    if (index) {
+      return index.books.map(book => ({
+        ...book,
+        lastModified: new Date(book.lastModified)
+      }));
+    }
+  }
+
   const allFiles = await scanDirectory(directory, recursive);
   const ebookFiles = allFiles.filter(file => 
     EBOOK_EXTENSIONS.includes(getFileExtension(file))
@@ -49,6 +60,10 @@ export async function scan(options: ScanOptions): Promise<EbookInfo[]> {
       hasCover,
       tags: allTags
     });
+  }
+
+  if (updateIndex) {
+    await saveIndex(directory, ebooks);
   }
 
   return ebooks;

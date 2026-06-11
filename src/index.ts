@@ -52,13 +52,15 @@ async function main() {
     .option('-p, --pattern <pattern>', '重命名模式，支持 {author}, {title}', '{author} - {title}')
     .option('-m, --move', '移动到分类文件夹')
     .option('--preview', '预览模式，不执行实际操作')
+    .option('--conflict <strategy>', '冲突处理策略: skip(跳过), rename(自动重命名), overwrite(覆盖)', 'rename')
     .action(async (directory, options) => {
       try {
         await rename({
           directory,
           pattern: options.pattern,
           move: options.move,
-          preview: options.preview
+          preview: options.preview,
+          conflict: options.conflict as 'skip' | 'rename' | 'overwrite'
         }, chalk);
       } catch (error) {
         console.error(chalk.red(`重命名失败: ${error}`));
@@ -95,12 +97,14 @@ async function main() {
     .argument('<directory>', '要处理的目录路径')
     .option('-t, --threshold <number>', '相似度阈值', (value: string) => parseFloat(value), 0.9)
     .option('--preview', '预览模式，不执行实际操作')
+    .option('--conflict <strategy>', '冲突处理策略: skip(跳过), rename(自动重命名), overwrite(覆盖)', 'rename')
     .action(async (directory, options) => {
       try {
         await dedupe({
           directory,
           threshold: options.threshold,
-          preview: options.preview
+          preview: options.preview,
+          conflict: options.conflict as 'skip' | 'rename' | 'overwrite'
         }, chalk);
       } catch (error) {
         console.error(chalk.red(`去重失败: ${error}`));
@@ -114,12 +118,18 @@ async function main() {
     .argument('<directory>', '要导出的目录路径')
     .argument('<output>', '输出文件路径')
     .option('-f, --format <format>', '输出格式 (json, yaml, csv, md)', 'json')
+    .option('--tag <tag>', '按标签筛选')
+    .option('--category <category>', '按分类筛选')
+    .option('--author <author>', '按作者关键字筛选')
     .action(async (directory, output, options) => {
       try {
         await exportList({
           directory,
           output,
-          format: options.format as 'json' | 'yaml' | 'csv' | 'md'
+          format: options.format as 'json' | 'yaml' | 'csv' | 'md',
+          tag: options.tag,
+          category: options.category,
+          author: options.author
         }, chalk);
       } catch (error) {
         console.error(chalk.red(`导出失败: ${error}`));

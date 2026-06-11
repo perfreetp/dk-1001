@@ -1,6 +1,8 @@
 import * as fs from 'fs-extra';
 import { loadState, undoLastOperation, saveState, restoreFromTrash } from '../utils/stateManager';
 import { moveFile } from '../utils/fileUtils';
+import { updateIndexPath, addToIndex, removeFromIndex } from '../utils/indexManager';
+import { scan } from './scan';
 
 export async function undo(directory: string, chalk: any): Promise<void> {
   await loadState(directory);
@@ -30,6 +32,7 @@ export async function undo(directory: string, chalk: any): Promise<void> {
       try {
         if (await fs.pathExists(change.target!)) {
           await moveFile(change.target!, change.source);
+          await updateIndexPath(directory, change.target!, change.source);
           console.log(chalk.green('  ✓ 已恢复'));
           successCount++;
         } else {
@@ -66,6 +69,11 @@ export async function undo(directory: string, chalk: any): Promise<void> {
       try {
         if (await fs.pathExists(trashPath)) {
           await restoreFromTrash(trashPath, change.source);
+          const books = await scan({ directory, recursive: true, updateIndex: false });
+          const restoredBook = books.find(b => b.filePath === change.source);
+          if (restoredBook) {
+            await addToIndex(directory, restoredBook);
+          }
           console.log(chalk.green('  ✓ 已恢复'));
           successCount++;
         } else {

@@ -15,6 +15,7 @@ export interface ScanOptions {
   format?: string;
   language?: string;
   recursive?: boolean;
+  updateIndex?: boolean;
 }
 
 export interface RenameOptions {
@@ -22,6 +23,7 @@ export interface RenameOptions {
   pattern?: string;
   move?: boolean;
   preview?: boolean;
+  conflict?: 'skip' | 'rename' | 'overwrite';
 }
 
 export interface TagOptions {
@@ -36,12 +38,16 @@ export interface DedupeOptions {
   directory: string;
   threshold?: number;
   preview?: boolean;
+  conflict?: 'skip' | 'rename' | 'overwrite';
 }
 
 export interface ExportOptions {
   directory: string;
   output: string;
   format?: 'json' | 'yaml' | 'csv' | 'md';
+  tag?: string;
+  category?: string;
+  author?: string;
 }
 
 export interface OperationRecord {
@@ -56,4 +62,11 @@ export interface ChangeRecord {
   source: string;
   target?: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface ConflictResult {
+  source: string;
+  target: string;
+  action: 'skip' | 'rename' | 'overwrite';
+  finalPath?: string;
 }

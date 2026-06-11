@@ -3,6 +3,7 @@ import * as path from 'path';
 import { TagOptions, ChangeRecord } from '../types';
 import { scan } from './scan';
 import { createOperationRecord, addOperation, saveState } from '../utils/stateManager';
+import { updateIndexTags } from '../utils/indexManager';
 
 export async function tag(options: TagOptions, chalk: any): Promise<void> {
   const { directory, add = [], remove = [], listMissingCovers = false, preview = false } = options;
@@ -94,6 +95,7 @@ export async function tag(options: TagOptions, chalk: any): Promise<void> {
       } else if (await fs.pathExists(tagFilePath)) {
         await fs.remove(tagFilePath);
       }
+      await updateIndexTags(directory, change.source, newTags);
     }
     
     await saveState(directory);

@@ -3,13 +3,26 @@ import * as yaml from 'js-yaml';
 import { ExportOptions } from '../types';
 import { scan } from './scan';
 import { formatFileSize } from '../utils/fileUtils';
+import { findBooksByTag, findBooksByCategory, findBooksByAuthor } from '../utils/indexManager';
 
 export async function exportList(options: ExportOptions, chalk: any): Promise<void> {
-  const { directory, output, format = 'json' } = options;
+  const { directory, output, format = 'json', tag, category, author } = options;
   
   const ebooks = await scan({ directory, recursive: true });
 
-  const exportData = ebooks.map(ebook => ({
+  let filteredBooks = [...ebooks];
+  
+  if (tag) {
+    filteredBooks = findBooksByTag(filteredBooks, tag);
+  }
+  if (category) {
+    filteredBooks = findBooksByCategory(filteredBooks, category);
+  }
+  if (author) {
+    filteredBooks = findBooksByAuthor(filteredBooks, author);
+  }
+
+  const exportData = filteredBooks.map(ebook => ({
     title: ebook.title,
     author: ebook.author,
     format: ebook.extension.slice(1),
@@ -30,7 +43,7 @@ export async function exportList(options: ExportOptions, chalk: any): Promise<vo
       content = generateCSV(exportData);
       break;
     case 'md':
-      content = generateMarkdown(exportData);
+      content = generateMarkdown(exportData, tag, category, author);
       break;
     default:
       content = JSON.stringify(exportData, null, 2);
@@ -39,7 +52,10 @@ export async function exportList(options: ExportOptions, chalk: any): Promise<vo
   await fs.writeFile(output, content, 'utf-8');
   
   console.log(chalk.green(`\n书单已导出到: ${output}`));
-  console.log(chalk.cyan(`共导出 ${ebooks.length} 本书籍`));
+  console.log(chalk.cyan(`共导出 ${filteredBooks.length} 本书籍`));
+  if (tag || category || author) {
+    console.log(chalk.blue(`筛选条件: ${tag ? `标签=${tag} ` : ''}${category ? `分类=${category} ` : ''}${author ? `作者=${author}` : ''}`));
+  }
 }
 
 function generateCSV(data: any[]): string {
@@ -58,35 +74,41 @@ function generateCSV(data: any[]): string {
   return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 }
 
-function generateMarkdown(data: any[]): string {
+function generateMarkdown(data: any[], tag?: string, category?: string, author?: string): string {
   const sortedByCategory = data.reduce((acc, item) => {
-    const category = item.tags.find((t: string) => !['zh', 'en', 'other'].includes(t)) || '其他';
-    if (!acc[category]) {
-      acc[category] = [];
+    const bookCategory = item.tags.find((t: string) => !['zh', 'en', 'other'].includes(t)) || '其他';
+    if (!acc[bookCategory]) {
+      acc[bookCategory] = [];
     }
-    acc[category].push(item);
+    acc[bookCategory].push(item);
     return acc;
   }, {} as Record<string, any[]>);
 
   const lines: string[] = [];
   lines.push('# 我的电子书库');
   lines.push('');
-  lines.push(`> 共 ${data.length} 本书籍 | 生成时间: ${new Date().toLocaleString()}`);
+  
+  const filterInfo: string[] = [];
+  if (tag) filterInfo.push(`标签: ${tag}`);
+  if (category) filterInfo.push(`分类: ${category}`);
+  if (author) filterInfo.push(`作者: ${author}`);
+  
+  lines.push(`> 共 ${data.length} 本书籍 | 生成时间: ${new Date().toLocaleString()}${filterInfo.length > 0 ? ` | ${filterInfo.join(' | ')}` : ''}`);
   lines.push('');
   lines.push('---');
   lines.push('');
 
   const categories = Object.keys(sortedByCategory).sort();
-  categories.forEach(category => {
-    const books = sortedByCategory[category];
-    lines.push(`## 📁 ${category}`);
+  categories.forEach(cat => {
+    const books = sortedByCategory[cat];
+    lines.push(`## 📁 ${cat}`);
     lines.push(`> ${books.length} 本书`);
     lines.push('');
     
     books.forEach((book: any, index: number) => {
       const coverStatus = book.hasCover ? '✅' : '❌';
       const lang = book.tags.includes('zh') ? '中' : book.tags.includes('en') ? '英' : '?';
-      const customTags = book.tags.filter((t: string) => !['zh', 'en', 'other', category].includes(t));
+      const customTags = book.tags.filter((t: string) => !['zh', 'en', 'other', cat].includes(t));
       
       lines.push(`${index + 1}. **${book.title}**`);
       lines.push(`   - 作者: ${book.author || '未知作者'}`);
@@ -106,8 +128,8 @@ function generateMarkdown(data: any[]): string {
   lines.push('');
   lines.push('| 分类 | 数量 |');
   lines.push('|------|------|');
-  categories.forEach(category => {
-    lines.push(`| ${category} | ${sortedByCategory[category].length} |`);
+  categories.forEach(cat => {
+    lines.push(`| ${cat} | ${sortedByCategory[cat].length} |`);
   });
   lines.push('');
 

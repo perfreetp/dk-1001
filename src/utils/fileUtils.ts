@@ -48,25 +48,66 @@ export async function fileExists(filePath: string): Promise<boolean> {
   return fs.pathExists(filePath);
 }
 
-export async function renameFile(oldPath: string, newPath: string): Promise<void> {
-  await fs.move(oldPath, newPath, { overwrite: true });
+export async function renameFile(oldPath: string, newPath: string, conflictStrategy: 'skip' | 'rename' | 'overwrite' = 'rename'): Promise<{ success: boolean; finalPath: string }> {
+  const targetExists = await fs.pathExists(newPath);
+  
+  if (targetExists && conflictStrategy === 'skip') {
+    return { success: false, finalPath: oldPath };
+  }
+  
+  let finalPath = newPath;
+  if (targetExists && conflictStrategy === 'rename') {
+    const ext = path.extname(newPath);
+    const base = path.basename(newPath, ext);
+    const dir = path.dirname(newPath);
+    let counter = 1;
+    while (await fs.pathExists(finalPath)) {
+      finalPath = path.join(dir, `${base} (${counter})${ext}`);
+      counter++;
+    }
+  }
+  
+  await fs.move(oldPath, finalPath, { overwrite: conflictStrategy === 'overwrite' });
   
   const tagFileOld = oldPath + '.tags';
-  const tagFileNew = newPath + '.tags';
+  const tagFileNew = finalPath + '.tags';
   if (await fs.pathExists(tagFileOld)) {
     await fs.move(tagFileOld, tagFileNew, { overwrite: true });
   }
+  
+  return { success: true, finalPath };
 }
 
-export async function moveFile(source: string, destination: string): Promise<void> {
+export async function moveFile(source: string, destination: string, conflictStrategy: 'skip' | 'rename' | 'overwrite' = 'rename'): Promise<{ success: boolean; finalPath: string }> {
   await fs.ensureDir(path.dirname(destination));
-  await fs.move(source, destination, { overwrite: true });
+  
+  const targetExists = await fs.pathExists(destination);
+  
+  if (targetExists && conflictStrategy === 'skip') {
+    return { success: false, finalPath: source };
+  }
+  
+  let finalPath = destination;
+  if (targetExists && conflictStrategy === 'rename') {
+    const ext = path.extname(destination);
+    const base = path.basename(destination, ext);
+    const dir = path.dirname(destination);
+    let counter = 1;
+    while (await fs.pathExists(finalPath)) {
+      finalPath = path.join(dir, `${base} (${counter})${ext}`);
+      counter++;
+    }
+  }
+  
+  await fs.move(source, finalPath, { overwrite: conflictStrategy === 'overwrite' });
   
   const tagFileSource = source + '.tags';
-  const tagFileDest = destination + '.tags';
+  const tagFileDest = finalPath + '.tags';
   if (await fs.pathExists(tagFileSource)) {
     await fs.move(tagFileSource, tagFileDest, { overwrite: true });
   }
+  
+  return { success: true, finalPath };
 }
 
 export async function deleteFile(filePath: string): Promise<void> {
